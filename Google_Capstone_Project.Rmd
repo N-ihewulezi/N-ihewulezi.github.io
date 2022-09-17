@@ -1,0 +1,157 @@
+---
+title: "Google_Capstone_Project"
+author: "Nkechi Ihewulezi"
+date: "2022-09-14"
+output:
+  pdf_document: default
+  html_document: default
+---
+## Case Study: How Does a Bike-Share Navigate Speedy Success?
+**Scenario**
+You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director
+of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore,
+your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights,
+your team will design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives
+must approve your recommendations, so they must be backed up with compelling data insights and professional data
+visualizations.
+
+## Step 1: Load packages
+Start by installing the required packages. If you have already installed and loaded `tidyverse`, `skimr`, and `janitor` in this session, feel free to skip the code chunks in this step. This may take a few minutes to run, and you may get a pop-up window asking if you want to proceed. Click yes to continue installing the packages.
+Once a package is installed, you can load it by running the `library()` function with the package name inside the parentheses:
+```{r load packages}
+library(tidyverse)
+library(scales)
+library(lubridate)
+library(skimr)
+library(janitor)
+rm(list = ls())
+```
+## Load the data into R
+Import previous 12 months data. In this case data for year 2021
+Get the file list in the directory and combine into one data frame.
+
+
+```{r loading the csv files from the dir}
+df1 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202101-divvy-tripdata.csv")
+df2 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202102-divvy-tripdata.csv")
+df3 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202103-divvy-tripdata.csv")
+df4 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202104-divvy-tripdata.csv")
+df5 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202105-divvy-tripdata.csv")
+df6 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202106-divvy-tripdata.csv")
+df7 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202107-divvy-tripdata.csv")
+df8 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202108-divvy-tripdata.csv")
+df9 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202109-divvy-tripdata.csv")
+df10 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202110-divvy-tripdata.csv")
+df11 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202111-divvy-tripdata.csv")
+df12 <- read.csv("C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers/Bikers_data_2021/202112-divvy-tripdata.csv")
+```
+<!-- Combine the 12 data.frames into one(1) data.frame -->
+The files are of same number of variables and as such we can combine into one.
+
+```{r combine with rbind}  
+# combine the 12 data frames into one data frame
+bike_trips_2021 <- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9,df10,df11,df12)   
+# remove empty rows/cols.
+bike_trips_2021 <- janitor::remove_empty(bike_trips_2021, which = c("cols"))
+bike_trips_2021 <- janitor::remove_empty(bike_trips_2021, which = c("rows"))
+```
+## Data cleaning
+check data structures to be sure they are in order
+```{r }
+str(bike_trips_2021)
+```
+
+## Changing to suitable data types
+All data structures are in order except the start and end date that are in character format. This has to be corrected to date and time format.
+```{r}
+bike_trips_2021$started_at = lubridate::dmy_hm(bike_trips_2021$started_at)    
+bike_trips_2021$ended_at = lubridate::dmy_hm(bike_trips_2021$ended_at)
+# confirm Data structure
+str(bike_trips_2021)
+```
+## Data Manipulation
+Adding calculated field(trip_duration), extracting start_date, end_date , start_time and end_time and weekday column.
+
+```{r Manipulation of data}
+
+bike_trips_2021$ride_length <- difftime(bike_trips_2021$ended_at, bike_trips_2021$started_at, units = c("mins")) 
+
+bike_trips_2021$start_date <- as.Date(bike_trips_2021$started_at)
+bike_trips_2021$end_date <- as.Date(bike_trips_2021$ended_at)
+
+bike_trips_2021$start_hour <- lubridate::hour(bike_trips_2021$started_at)
+bike_trips_2021$end_hour <- lubridate::hour(bike_trips_2021$ended_at)
+
+
+bike_trips_2021$day_of_week <- wday(bike_trips_2021$started_at, label = TRUE)
+#drop rows with ride_length <= 0 and columns not needed
+df <- bike_trips_2021 %>% filter(ride_length > 0) %>% drop_na() %>% 
+  select(-ride_id, -end_station_name, -end_station_id)
+bike_trips_2021 <- df
+
+```
+## view Cleaned Data
+
+```{r}
+head(bike_trips_2021)
+```
+ 
+```{r arrange }
+#**Arrange Data via ride_length to see the min ride_length**
+head(arrange(bike_trips_2021, (bike_trips_2021$ride_length)))
+
+```
+##Create summary data frame
+```{r}
+bike_trips_2021_summ <- bike_trips_2021 %>%
+  group_by(member_casual,rideable_type,start_date,day_of_week) %>%
+                summarise(Total_ride_length = sum(ride_length),
+                  Average_ride_length = mean(ride_length),
+                  Median = median(ride_length),
+                  Max_ride_length = max(ride_length),
+                  Min_ride_length = min(ride_length),
+                  Count = n()
+                ) %>% ungroup()
+```
+
+
+```{r}
+head(bike_trips_2021_summ)
+
+```
+## Top Ten (10) Start Stations
+```{r}
+  bike_trips_2021 %>%  count(start_station_name,SORT = TRUE) %>% top_n(10) %>%
+  ggplot() + geom_col(aes(x=reorder(start_station_name,n),y=n)) + coord_flip()
+```
+ 
+```{r  Bike Trips Per month} 
+#**Bike Trips Per month**
+ bike_trips_2021 %>% count(start_date,sort = TRUE) %>%
+  ggplot() + geom_line(aes(x=start_date,n)) +
+  geom_smooth(aes(x=start_date,y=n),method = "gam")
+
+```
+```{r}
+#**Count by Bike Trips per day_of_Week**
+ggplot(bike_trips_2021_summ) + geom_col(aes(x=day_of_week,y=Count,fill=member_casual)) +
+  scale_y_continuous(labels = comma) +
+  labs(title="Count of Rides per weekday")
+
+```
+```{r}
+bike_trips_2021_summ %>% ggplot() + geom_col(aes(x=start_date,y=Count, color=member_casual)) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Average of Rides per Day",
+       subtitle = "(Bases on 28 day moving average",
+       y="Average rides per day") 
+
+```
+```{r}
+#**Export clean Data**
+write.csv(bike_trips_2021_summ,"C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers\\bike_trips_2021_summ.csv",  row.names = FALSE)
+write.csv(bike_trips_2021,"C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers\\bike_trips_2021.csv",  row.names = FALSE)
+```
+ 
+ 
+ 
