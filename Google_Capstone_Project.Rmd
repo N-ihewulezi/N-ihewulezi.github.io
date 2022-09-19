@@ -148,9 +148,9 @@ bike_trips_2021_summ %>% ggplot() + geom_col(aes(x=start_date,y=Count, color=mem
 
 ```
 ```{r}
-#**Export clean Data**
+#**Export Data for analysis**
 write.csv(bike_trips_2021_summ,"C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers\\bike_trips_2021_summ.csv",  row.names = FALSE)
-write.csv(bike_trips_2021,"C:/Users/Nkechi Ihewulezi/Downloads/R/Bikers\\bike_trips_2021.csv",  row.names = FALSE)
+
 ```
  
  
